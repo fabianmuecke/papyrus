@@ -1,7 +1,7 @@
 import Foundation
 
 /// Makes URL requests.
-public final class Provider {
+public struct Provider: Sendable {
     public let baseURL: String
     public let http: HTTPService
     public var interceptors: [Interceptor]
@@ -18,31 +18,34 @@ public final class Provider {
         RequestBuilder(baseURL: baseURL, method: method, path: path)
     }
 
-    public func modifyRequests(action: @escaping (inout RequestBuilder) throws -> Void) -> Self {
+    public func modifyRequests(action: @escaping @Sendable (inout RequestBuilder) throws -> Void) -> Self {
         struct AnonymousModifier: RequestModifier {
-            let action: (inout RequestBuilder) throws -> Void
+            let action: @Sendable (inout RequestBuilder) throws -> Void
 
             func modify(req: inout RequestBuilder) throws {
                 try action(&req)
             }
         }
-
-        modifiers.append(AnonymousModifier(action: action))
-        return self
+        var result = self
+        result.modifiers.append(AnonymousModifier(action: action))
+        return result
     }
 
     @discardableResult
-    public func intercept(action: @escaping (PapyrusRequest, (PapyrusRequest) async throws -> PapyrusResponse) async throws -> PapyrusResponse) -> Self {
+    public func intercept(action: @escaping @Sendable (PapyrusRequest, (PapyrusRequest) async throws -> PapyrusResponse) async throws
+        -> PapyrusResponse
+    ) -> Self {
         struct AnonymousInterceptor: Interceptor {
-            let action: (PapyrusRequest, Interceptor.Next) async throws -> PapyrusResponse
+            let action: @Sendable (PapyrusRequest, Interceptor.Next) async throws -> PapyrusResponse
 
             func intercept(req: PapyrusRequest, next: Interceptor.Next) async throws -> PapyrusResponse {
                 try await action(req, next)
             }
         }
 
-        interceptors.append(AnonymousInterceptor(action: action))
-        return self
+        var result = self
+        result.interceptors.append(AnonymousInterceptor(action: action))
+        return result
     }
 
     @discardableResult
@@ -68,11 +71,11 @@ public final class Provider {
     }
 }
 
-public protocol Interceptor {
+public protocol Interceptor: Sendable {
     typealias Next = (PapyrusRequest) async throws -> PapyrusResponse
     func intercept(req: PapyrusRequest, next: Next) async throws -> PapyrusResponse
 }
 
-public protocol RequestModifier {
+public protocol RequestModifier: Sendable {
     func modify(req: inout RequestBuilder) throws
 }

@@ -97,6 +97,9 @@ private class _URLEncodedFormDecoder: Decoder {
 
     /// Options set on the top-level decoder.
     fileprivate let options: URLEncodedFormDecoder._Options
+    
+    /// The ``ISO8601DateFormatter``.
+    fileprivate lazy var iso8601Formatter: ISO8601DateFormatter = URLEncodedForm.iso8601Formatter()
 
     /// The path to the current point in encoding.
     public fileprivate(set) var codingPath: [CodingKey]
@@ -601,7 +604,7 @@ extension _URLEncodedFormDecoder {
         case .iso8601:
             if #available(macOS 10.12, iOS 10.0, watchOS 3.0, tvOS 10.0, *) {
                 let dateString = try unbox(node, as: String.self)
-                guard let date = URLEncodedForm.iso8601Formatter.date(from: dateString) else {
+                guard let date = iso8601Formatter.date(from: dateString) else {
                     throw DecodingError.dataCorrupted(.init(codingPath: self.codingPath, debugDescription: "Invalid date format"))
                 }
                 return date

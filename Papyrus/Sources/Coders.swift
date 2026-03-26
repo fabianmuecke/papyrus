@@ -1,12 +1,11 @@
 enum Coders {
-
     // MARK: HTTP Body
 
-    static var defaultHTTPBodyEncoder: HTTPBodyEncoder = .json()
-    static var defaultHTTPBodyDecoder: HTTPBodyDecoder = .json()
+    static var defaultHTTPBodyEncoder: HTTPBodyEncoder { .json() }
+    static var defaultHTTPBodyDecoder: HTTPBodyDecoder { .json() }
 
     // MARK: Query
 
-    static var defaultQueryEncoder = URLEncodedFormEncoder()
-    static var defaultQueryDecoder = URLEncodedFormDecoder()
+    static var defaultQueryEncoder: URLEncodedFormEncoder { URLEncodedFormEncoder() }
+    static var defaultQueryDecoder: URLEncodedFormDecoder { URLEncodedFormDecoder() }
 }

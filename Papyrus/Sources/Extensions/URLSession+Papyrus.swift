@@ -4,7 +4,7 @@ import FoundationNetworking
 #endif
 
 extension Provider {
-    public convenience init(baseURL: String,
+    public init(baseURL: String,
                             urlSession: URLSession = .shared,
                             modifiers: [RequestModifier] = [],
                             interceptors: [Interceptor] = []) {

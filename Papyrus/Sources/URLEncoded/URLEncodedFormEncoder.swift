@@ -93,6 +93,8 @@ public struct URLEncodedFormEncoder {
 
 /// Internal QueryEncoder class. Does all the heavy lifting
 private class _URLEncodedFormEncoder: Encoder {
+    fileprivate lazy var iso8601Formatter: ISO8601DateFormatter = URLEncodedForm.iso8601Formatter()
+    
     var codingPath: [CodingKey]
 
     /// the encoder's storage
@@ -330,7 +332,7 @@ extension _URLEncodedFormEncoder {
             try self.encode(Double(date.timeIntervalSince1970).description)
         case .iso8601:
             if #available(macOS 10.12, iOS 10.0, watchOS 3.0, tvOS 10.0, *) {
-                try encode(URLEncodedForm.iso8601Formatter.string(from: date))
+                try encode(iso8601Formatter.string(from: date))
             } else {
                 preconditionFailure("ISO8601DateFormatter is unavailable on this platform")
             }

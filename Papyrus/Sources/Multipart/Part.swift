@@ -1,6 +1,6 @@
 import Foundation
 
-public struct Part: Codable {
+public struct Part: Codable, Sendable {
     public let data: Data
     public let name: String?
     public let fileName: String?

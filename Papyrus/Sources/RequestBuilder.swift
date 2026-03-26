@@ -19,7 +19,7 @@ public struct RequestBuilder {
         }
     }
 
-    public enum ContentKey: Hashable, ExpressibleByStringLiteral {
+    public enum ContentKey: Hashable, Sendable, ExpressibleByStringLiteral {
         /// The key was explicitly defined by the user, i.e.
         /// `@Path("explicit-key") key: String`. It won't
         /// be affected by custom KeyMapping.
@@ -53,10 +53,10 @@ public struct RequestBuilder {
         }
     }
 
-    public struct ContentValue: Encodable {
-        private let _encode: (Encoder) throws -> Void
+    public struct ContentValue: Encodable, Sendable {
+        private let _encode: @Sendable (Encoder) throws -> Void
 
-        public init<T: Encodable>(_ wrapped: T) {
+        public init<T: Encodable & Sendable>(_ wrapped: T) {
             _encode = wrapped.encode
         }
 
@@ -67,7 +67,7 @@ public struct RequestBuilder {
         }
     }
 
-    public enum Content {
+    public enum Content: Sendable {
         case value(ContentValue)
         case fields([ContentKey: ContentValue])
         case multipart([ContentKey: Part])
@@ -126,7 +126,7 @@ public struct RequestBuilder {
         parameters[key] = value.rawValue.description
     }
 
-    public mutating func addQuery<E: Encodable>(_ key: String, value: E?, mapKey: Bool = true) {
+    public mutating func addQuery<E: Encodable & Sendable>(_ key: String, value: E?, mapKey: Bool = true) {
         guard let value else { return }
         let key: ContentKey = mapKey ? .implicit(key) : .explicit(key)
         queries[key] = ContentValue(value)
@@ -148,7 +148,7 @@ public struct RequestBuilder {
         headers["Authorization"] = header.value
     }
 
-    public mutating func setBody<E: Encodable>(_ value: E) {
+    public mutating func setBody<E: Encodable & Sendable>(_ value: E) {
         if let body = body {
             preconditionFailure("Tried to set a request @Body to type \(E.self), but it already had one: \(body).")
         }
@@ -171,7 +171,7 @@ public struct RequestBuilder {
         body = .multipart(parts)
     }
 
-    public mutating func addField<E: Encodable>(_ key: String, value: E, mapKey: Bool = true) {
+    public mutating func addField<E: Encodable & Sendable>(_ key: String, value: E, mapKey: Bool = true) {
         var fields: [ContentKey: ContentValue] = [:]
         if let body = body {
             guard case .fields(let existingFields) = body else {
