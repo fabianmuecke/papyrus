@@ -114,7 +114,7 @@ final class CurlTests: XCTestCase {
         req.addHeader("High", value: "Ground")
         let request = try TestRequest(from: req)
 
-        var message: String? = nil
+        nonisolated(unsafe) var message: String? = nil
 
         let logger = CurlLogger(when: .always, using: {
             message = $0
@@ -143,7 +143,7 @@ final class CurlTests: XCTestCase {
         req.addHeader("High", value: "Ground")
         let request = try TestRequest(from: req)
 
-        var message: String? = nil
+        nonisolated(unsafe) var message: String? = nil
 
         let logger = CurlLogger(when: .onError, using: {
             message = $0
@@ -172,7 +172,7 @@ final class CurlTests: XCTestCase {
 
         let request = try TestRequest(from: req)
 
-        var message: String? = nil
+        nonisolated(unsafe) var message: String? = nil
 
         let logger = CurlLogger(when: .onError, using: {
             message = $0

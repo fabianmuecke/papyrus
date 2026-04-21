@@ -12,7 +12,7 @@ final class ProviderTests: XCTestCase {
 }
 
 private struct TestHTTPService: HTTPService {
-    func build(method: String, url: URL, headers: [String : String], body: Data?) -> PapyrusRequest {
+    func build(from _: RequestBuilder) -> PapyrusRequest {
         fatalError()
     }
     

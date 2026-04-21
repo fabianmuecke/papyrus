@@ -95,7 +95,7 @@ fileprivate struct _Person: Decodable {
     let name: String
 }
 
-fileprivate class _HTTPServiceMock: HTTPService {
+fileprivate final class _HTTPServiceMock: HTTPService {
     
     enum ResponseType {
         case `nil`
@@ -120,7 +120,7 @@ fileprivate class _HTTPServiceMock: HTTPService {
         _responseType = responseType
     }
     
-    func build(method: String, url: URL, headers: [String : String], body: Data?) -> PapyrusRequest {
+    func build(from builder: RequestBuilder) throws -> PapyrusRequest {
         _Request(method: "", headers: [:])
     }
     

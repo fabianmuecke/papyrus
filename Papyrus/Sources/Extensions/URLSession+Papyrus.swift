@@ -4,10 +4,12 @@ import FoundationNetworking
 #endif
 
 extension Provider {
-    public init(baseURL: String,
-                            urlSession: URLSession = .shared,
-                            modifiers: [RequestModifier] = [],
-                            interceptors: [Interceptor] = []) {
+    public init(
+        baseURL: String,
+        urlSession: URLSession = .shared,
+        modifiers: [RequestModifier] = [],
+        interceptors: [Interceptor] = []
+    ) {
         self.init(baseURL: baseURL, http: urlSession, modifiers: modifiers, interceptors: interceptors)
     }
 }
@@ -15,16 +17,18 @@ extension Provider {
 // MARK: `HTTPService` Conformance
 
 extension URLSession: HTTPService {
-    public func build(method: String, url: URL, headers: [String: String], body: Data?) -> PapyrusRequest {
+    public func build(from builder: RequestBuilder) throws -> PapyrusRequest {
+        let url = try builder.fullURL()
+        let (body, headers) = try builder.bodyAndHeaders()
         var request = URLRequest(url: url)
-        request.httpMethod = method
+        request.httpMethod = builder.method
         request.httpBody = body
         request.allHTTPHeaderFields = headers
         return request
     }
 
     public func request(_ req: PapyrusRequest) async -> PapyrusResponse {
-#if os(Linux) // Linux doesn't have access to async URLSession APIs
+        #if os(Linux) // Linux doesn't have access to async URLSession APIs
         await withCheckedContinuation { continuation in
             let urlRequest = req.urlRequest
             dataTask(with: urlRequest) { data, response, error in
@@ -32,7 +36,7 @@ extension URLSession: HTTPService {
                 continuation.resume(returning: response)
             }.resume()
         }
-#else
+        #else
         let urlRequest = req.urlRequest
         do {
             let (data, res) = try await data(for: urlRequest)
@@ -40,7 +44,7 @@ extension URLSession: HTTPService {
         } catch {
             return _Response(request: urlRequest, response: nil, error: error, body: nil)
         }
-#endif
+        #endif
     }
 }
 

@@ -65,9 +65,7 @@ public struct Provider: Sendable {
             try modifier.modify(req: &builder)
         }
 
-        let url = try builder.fullURL()
-        let (body, headers) = try builder.bodyAndHeaders()
-        return http.build(method: builder.method, url: url, headers: headers, body: body)
+        return try http.build(from: builder)
     }
 }
 
