@@ -1,6 +1,6 @@
 # 📜 Papyrus
 
-<a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-5.9-orange.svg" alt="Swift Version"></a>
+<a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-6.2-orange.svg" alt="Swift Version"></a>
 <a href="https://github.com/joshuawright11/papyrus/releases"><img src="https://img.shields.io/github/release/joshuawright11/papyrus.svg" alt="Latest Release"></a>
 <a href="https://github.com/joshuawright11/papyrus/blob/main/LICENSE"><img src="https://img.shields.io/github/license/joshuawright11/papyrus.svg" alt="License"></a>
 
@@ -42,6 +42,7 @@ Annotations on the protocol, functions, and parameters help construct requests a
 2. [Requests](#requests)
 3. [Responses](#responses)
 4. [Advanced](#advanced)
+   - [Behaviors](#behaviors)
 5. [Testing](#testing)
 6. [Acknowledgements](#acknowledgements)
 7. [License](#license)
@@ -49,15 +50,16 @@ Annotations on the protocol, functions, and parameters help construct requests a
 ## Features
 
 -   [x] Turn REST APIs into Swift Protocols
--   [x] `async`/`await` _or_ [Callback APIs](#callback-apis)
+-   [x] `async`/`await`
 -   [x] JSON, URLForm and Multipart Encoding Support
 -   [x] Automatic Key Mapping
 -   [x] Sensible Parameter Defaults Based on HTTP Verb
 -   [x] Automatically Decode Responses with `Codable`
 -   [x] Custom Interceptors & Request Builders
+-   [x] Declarative Request Behaviors
 -   [x] Advanced Error Handling
 -   [x] Automatic Mocks for Testing
--   [x] Powered by `URLSession` or [Alamofire](https://github.com/Alamofire/Alamofire) Out of the Box
+-   [x] Powered by `URLSession` Out of the Box
 -   [x] Linux / Swift on Server Support Powered by [async-http-client](https://github.com/swift-server/async-http-client)
 
 ## Getting Started
@@ -66,7 +68,7 @@ Annotations on the protocol, functions, and parameters help construct requests a
 
 Supports iOS 13+ / macOS 10.15+.
 
-Keep in mind that Papyrus uses [macros](https://developer.apple.com/documentation/swift/macros) which require Swift 5.9 / Xcode 15 to compile.
+Keep in mind that Papyrus uses [macros](https://developer.apple.com/documentation/swift/macros) which require Swift 6.0 / Xcode 16 to compile.
 
 ### Installation
 
@@ -85,23 +87,6 @@ Out of the box, Papyrus is powered by `URLSession`.
 
 ```swift
 .product(name: "Papyrus", package: "papyrus")
-```
-
-</details>
-
-<details>
-  <summary>Alamofire</summary>
-
-### Alamofire
-
-If you'd prefer to use [Alamofire](https://github.com/Alamofire/Alamofire), use the `PapyrusAlamofire` product.
-
-```swift
-.package(url: "https://github.com/joshuawright11/papyrus.git", from: "0.6.0")
-```
-
-```swift
-.product(name: "PapyrusAlamofire", package: "papyrus")
 ```
 
 </details>
@@ -383,6 +368,21 @@ do {
 }
 ```
 
+#### Custom Validation
+
+By default, Papyrus considers any 2xx status code a success. You can override this by implementing `validate()` on a custom `PapyrusResponse` type returned by your `HTTPService`.
+
+```swift
+struct MyResponse: PapyrusResponse {
+    // ...
+    func validate() throws -> Self {
+        // custom validation logic
+        guard statusCode == 200 else { throw MyError.notOK }
+        return self
+    }
+}
+```
+
 ## Advanced
 
 ### Parameter Labels
@@ -451,27 +451,73 @@ struct MyInterceptor: Interceptor { ... }
 let provider = Provider(baseURL: "http://localhost:3000", modifiers: [MyRequestModifier()], interceptors: [MyInterceptor()])
 ```
 
-### Callback APIs
+### Behaviors
 
-[Swift concurrency](https://docs.swift.org/swift-book/LanguageGuide/Concurrency.html) is the modern way of running asynchronous code in Swift.
+Behaviors let you attach declarative, typed metadata to specific endpoints. Interceptors and request modifiers can read and write behaviors without resorting to path/method matching or sentinel headers.
 
-If you haven't yet migrated to Swift concurrency and need access to a callback based API, you can pass an `@escaping` completion handler as the last argument in your endpoint functions.
+#### Defining a behavior
 
-The function must have no return type and the closure must have a single argument of type `Result<T: Codable, Error>`, `Result<Void, Error>`, or `Response` argument.
+Conform any `Sendable` type to `PapyrusBehavior`. The type itself is the key; `PapyrusBehaviors` stores at most one instance per type.
 
 ```swift
-// equivalent to `func getUser() async throws -> User`
-@GET("/user")
-func getUser(callback: @escaping (Result<User, Error>) -> Void)
+// Flag-only behavior — presence is the signal
+struct RequiresAuthBehavior: PapyrusBehavior {}
 
-// equivalent to `func createUser(email: String, password: String) async throws`
-@POST("/user")
-func createUser(email: String, password: String, completion: @escaping (Result<Void, Error>) -> Void)
-
-// equivalent to `func getResponse() async throws -> Response`
-@GET("/response")
-func getResponse(completion: @escaping (Response) -> Void)
+// Behavior with associated data
+struct AnalyticsTagBehavior: PapyrusBehavior {
+    let event: String
+}
 ```
+
+#### Annotating endpoints
+
+Use `@Behaviors` at the function or protocol level. Protocol-level behaviors apply to every endpoint; function-level behaviors are additive.
+
+```swift
+@API
+@Behaviors(RequiresAuthBehavior())          // applies to all endpoints
+protocol UsersAPI {
+    @GET("/users")
+    func listUsers() async throws -> [User]
+
+    @POST("/users")
+    @Behaviors(AnalyticsTagBehavior(event: "create_user"))
+    func createUser(name: String) async throws -> User
+}
+```
+
+#### Reading behaviors in an interceptor
+
+```swift
+struct AuthInterceptor: Interceptor {
+    func intercept(req: PapyrusRequest, next: Next) async throws -> PapyrusResponse {
+        guard req.behaviors.contains(RequiresAuthBehavior.self) else {
+            return try await next(req)
+        }
+        var req = req
+        req.headers["Authorization"] = "Bearer \(token)"
+        return try await next(req)
+    }
+}
+```
+
+#### Passing typed data between interceptors
+
+Any interceptor can insert a behavior into the request, and a downstream interceptor can read it back via `behaviors.get(_:)`.
+
+```swift
+// Upstream interceptor writes
+var req = req
+req.behaviors.insert(AnalyticsTagBehavior(event: "enriched"))
+return try await next(req)
+
+// Downstream interceptor reads
+if let tag = req.behaviors.get(AnalyticsTagBehavior.self) {
+    Analytics.track(tag.event)
+}
+```
+
+`RequestModifier`s can also read and write `behaviors` on the `RequestBuilder` before the request is built.
 
 ## Testing
 
