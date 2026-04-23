@@ -20,29 +20,34 @@ extension URLSession: HTTPService {
     public func build(from builder: RequestBuilder) throws -> PapyrusRequest {
         let url = try builder.fullURL()
         let (body, headers) = try builder.bodyAndHeaders()
-        var request = URLRequest(url: url)
-        request.httpMethod = builder.method
-        request.httpBody = body
-        request.allHTTPHeaderFields = headers
-        return request
+        return PapyrusURLRequest(
+            url: url,
+            method: builder.method,
+            headers: headers,
+            body: body,
+            behaviors: builder.behaviors
+        )
     }
 
     public func request(_ req: PapyrusRequest) async -> PapyrusResponse {
+        var urlRequest = URLRequest(url: req.url ?? URL(string: "about:blank")!)
+        urlRequest.httpMethod = req.method
+        urlRequest.allHTTPHeaderFields = req.headers
+        urlRequest.httpBody = req.body
+
         #if os(Linux) // Linux doesn't have access to async URLSession APIs
-        await withCheckedContinuation { continuation in
-            let urlRequest = req.urlRequest
+        return await withCheckedContinuation { continuation in
             dataTask(with: urlRequest) { data, response, error in
-                let response = _Response(request: urlRequest, response: response, error: error, body: data)
+                let response = _Response(papyrusRequest: req, urlRequest: urlRequest, response: response, error: error, body: data)
                 continuation.resume(returning: response)
             }.resume()
         }
         #else
-        let urlRequest = req.urlRequest
         do {
             let (data, res) = try await data(for: urlRequest)
-            return _Response(request: urlRequest, response: res, error: nil, body: data)
+            return _Response(papyrusRequest: req, urlRequest: urlRequest, response: res, error: nil, body: data)
         } catch {
-            return _Response(request: urlRequest, response: nil, error: error, body: nil)
+            return _Response(papyrusRequest: req, urlRequest: urlRequest, response: nil, error: error, body: nil)
         }
         #endif
     }
@@ -59,14 +64,15 @@ private struct _Response: PapyrusResponse {
     let urlRequest: URLRequest
     let urlResponse: URLResponse?
 
-    var request: PapyrusRequest? { urlRequest }
+    var request: PapyrusRequest?
     let error: Error?
     let body: Data?
     let headers: [String: String]?
     var statusCode: Int? { (urlResponse as? HTTPURLResponse)?.statusCode }
 
-    init(request: URLRequest, response: URLResponse?, error: Error?, body: Data?) {
-        self.urlRequest = request
+    init(papyrusRequest: PapyrusRequest, urlRequest: URLRequest, response: URLResponse?, error: Error?, body: Data?) {
+        self.request = papyrusRequest
+        self.urlRequest = urlRequest
         self.urlResponse = response
         self.error = error
         self.body = body
@@ -84,30 +90,5 @@ private struct _Response: PapyrusResponse {
         } else {
             self.headers = nil
         }
-    }
-}
-
-// MARK: `Request` Conformance
-
-extension PapyrusRequest {
-    public var urlRequest: URLRequest {
-        (self as! URLRequest)
-    }
-}
-
-extension URLRequest: PapyrusRequest {
-    public var body: Data? {
-        get { httpBody }
-        set { httpBody = newValue }
-    }
-
-    public var method: String {
-        get { httpMethod ?? "" }
-        set { httpMethod = newValue }
-    }
-
-    public var headers: [String: String] {
-        get { allHTTPHeaderFields ?? [:] }
-        set { allHTTPHeaderFields = newValue }
     }
 }

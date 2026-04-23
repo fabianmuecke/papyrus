@@ -144,7 +144,7 @@ extension EndpointAttribute {
             "req.requestBodyDecoder = MultipartDecoder()"
         case .converter: // custom decoding will need to be at the Router level
             nil
-        case .authorization, .headers: // nothing to parse here
+        case .authorization, .headers, .behaviors: // nothing to parse here
             nil
         }
     }

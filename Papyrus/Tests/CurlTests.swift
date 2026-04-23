@@ -199,12 +199,14 @@ private struct TestRequest: PapyrusRequest {
     var url: URL?
     var headers: [String : String]
     var body: Data?
+    var behaviors: PapyrusBehaviors
 
     init(method: String, url: URL?, headers: [String : String], body: Data?) {
         self.method = method
         self.url = url
         self.headers = headers
         self.body = body
+        self.behaviors = PapyrusBehaviors()
     }
 
     init(from builder: RequestBuilder) throws {

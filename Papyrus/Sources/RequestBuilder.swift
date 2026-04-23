@@ -82,6 +82,7 @@ public struct RequestBuilder {
     public var headers: [String: String]
     public var queries: [ContentKey: ContentValue]
     public var body: Content?
+    public var behaviors: PapyrusBehaviors
 
     // MARK: Configuration
 
@@ -114,6 +115,7 @@ public struct RequestBuilder {
         self.headers = [:]
         self.queries = [:]
         self.body = nil
+        self.behaviors = PapyrusBehaviors()
     }
 
     // MARK: Building

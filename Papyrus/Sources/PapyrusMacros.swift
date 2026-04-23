@@ -15,6 +15,9 @@ public macro Mock() = #externalMacro(module: "PapyrusPlugin", type: "MockMacro")
 // MARK: Protocol or Function attributes
 
 @attached(peer)
+public macro Behaviors(_ behaviors: any PapyrusBehavior...) = #externalMacro(module: "PapyrusPlugin", type: "DecoratorMacro")
+
+@attached(peer)
 public macro Headers(_ headers: [String: String]) = #externalMacro(module: "PapyrusPlugin", type: "DecoratorMacro")
 
 @attached(peer)

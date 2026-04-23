@@ -5,4 +5,5 @@ public protocol PapyrusRequest: Sendable {
     var method: String { get set }
     var headers: [String: String] { get set }
     var body: Data? { get set }
+    var behaviors: PapyrusBehaviors { get set }
 }

@@ -138,6 +138,7 @@ fileprivate struct _Request: PapyrusRequest {
     var method: String
     var headers: [String : String]
     var body: Data?
+    var behaviors: PapyrusBehaviors = PapyrusBehaviors()
 }
 
 fileprivate struct _Response: PapyrusResponse {

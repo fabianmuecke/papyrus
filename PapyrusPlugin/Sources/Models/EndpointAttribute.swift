@@ -10,12 +10,15 @@ enum EndpointAttribute {
     case keyMapping(value: String)
     case headers(value: String)
     case authorization(value: String)
+    case behaviors(values: [String])
 
     init?(_ attribute: AttributeSyntax) {
         let arguments = attribute.labeledArguments
         let firstArgument = arguments.first?.value
         let secondArgument = arguments.count > 1 ? arguments[1].value : nil
         switch attribute.name {
+        case "Behaviors":
+            self = .behaviors(values: arguments.map(\.value))
         case "Headers":
             guard let firstArgument else { return nil }
             self = .headers(value: firstArgument)

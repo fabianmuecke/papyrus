@@ -131,6 +131,10 @@ extension EndpointAttribute {
             "req.keyMapping = \(value)"
         case .authorization(value: let value):
             "req.addAuthorization(\(value))"
+        case .behaviors(let values):
+            values
+                .map { "req.behaviors.insert(\($0))" }
+                .joined(separator: "\n")
         }
     }
 }
