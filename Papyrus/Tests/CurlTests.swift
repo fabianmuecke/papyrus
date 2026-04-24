@@ -196,12 +196,12 @@ private struct TestResponse: PapyrusResponse {
 
 private struct TestRequest: PapyrusRequest {
     var method: String
-    var url: URL?
+    var url: URL
     var headers: [String : String]
     var body: Data?
     var behaviors: PapyrusBehaviors
 
-    init(method: String, url: URL?, headers: [String : String], body: Data?) {
+    init(method: String, url: URL, headers: [String : String], body: Data?) {
         self.method = method
         self.url = url
         self.headers = headers

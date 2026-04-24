@@ -121,7 +121,7 @@ fileprivate final class _HTTPServiceMock: HTTPService {
     }
     
     func build(from builder: RequestBuilder) throws -> PapyrusRequest {
-        _Request(method: "", headers: [:])
+        try _Request(url: builder.fullURL(), method: builder.method, headers: builder.headers)
     }
     
     func request(_ req: PapyrusRequest) async -> PapyrusResponse {
@@ -134,7 +134,7 @@ fileprivate final class _HTTPServiceMock: HTTPService {
 }
 
 fileprivate struct _Request: PapyrusRequest {
-    var url: URL?
+    var url: URL
     var method: String
     var headers: [String : String]
     var body: Data?

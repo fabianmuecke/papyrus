@@ -1,14 +1,14 @@
 import Foundation
 
 public struct PapyrusURLRequest: PapyrusRequest {
-    public var url: URL?
+    public var url: URL
     public var method: String
     public var headers: [String: String]
     public var body: Data?
     public var behaviors: PapyrusBehaviors
 
     public init(
-        url: URL?,
+        url: URL,
         method: String,
         headers: [String: String],
         body: Data?,

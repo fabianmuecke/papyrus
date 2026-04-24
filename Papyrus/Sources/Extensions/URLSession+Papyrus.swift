@@ -30,7 +30,7 @@ extension URLSession: HTTPService {
     }
 
     public func request(_ req: PapyrusRequest) async -> PapyrusResponse {
-        var urlRequest = URLRequest(url: req.url ?? URL(string: "about:blank")!)
+        var urlRequest = URLRequest(url: req.url)
         urlRequest.httpMethod = req.method
         urlRequest.allHTTPHeaderFields = req.headers
         urlRequest.httpBody = req.body

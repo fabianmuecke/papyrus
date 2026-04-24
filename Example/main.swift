@@ -38,7 +38,7 @@ let provider = Provider(baseURL: "http://127.0.0.1:3000")
         let res = try await next(req)
         let elapsedTime = String(format: "%.2fs", Date().timeIntervalSince(start))
         let statusCode = res.statusCode.map { "\($0)" } ?? "N/A"
-        print("Got a \(statusCode) for \(req.method) \(req.url!) after \(elapsedTime)")
+        print("Got a \(statusCode) for \(req.method) \(req.url) after \(elapsedTime)")
         return res
     }
 

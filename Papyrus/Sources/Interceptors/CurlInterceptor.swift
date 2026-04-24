@@ -50,12 +50,8 @@ public extension PapyrusRequest {
         var components = [String]()
 
         // Add URL on same line
-        if let url {
-            components.append("curl '\(url.absoluteString)'")
-        } else {
-            components.append("curl")
-        }
-
+        components.append("curl '\(url.absoluteString)'")
+        
         // Add method
         components.append("-X \(method)")
 
