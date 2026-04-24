@@ -418,6 +418,125 @@ final class APIMacroTests: XCTestCase {
         }
     }
 
+    func testBehaviorOnFunction() {
+        assertMacro(["API": APIMacro.self]) {
+            """
+            @API
+            protocol MyService {
+                @POST("/users")
+                @Behaviors(FooBehavior())
+                func createUser() async throws
+            }
+            """
+        } expansion: {
+            """
+            protocol MyService {
+                @POST("/users")
+                @Behaviors(FooBehavior())
+                func createUser() async throws
+            }
+
+            struct MyServiceAPI: MyService {
+                private let provider: Papyrus.Provider
+
+                init(provider: Papyrus.Provider) {
+                    self.provider = provider
+                }
+
+                func createUser() async throws {
+                    var req = builder(method: "POST", path: "/users")
+                    req.behaviors.insert(FooBehavior())
+                    try await provider.request(&req).validate()
+                }
+
+                private func builder(method: String, path: String) -> Papyrus.RequestBuilder {
+                    provider.newBuilder(method: method, path: path)
+                }
+            }
+            """
+        }
+    }
+
+    func testMultipleBehaviorsOnFunction() {
+        assertMacro(["API": APIMacro.self]) {
+            """
+            @API
+            protocol MyService {
+                @POST("/users")
+                @Behaviors(FooBehavior(), BarBehavior())
+                func createUser() async throws
+            }
+            """
+        } expansion: {
+            """
+            protocol MyService {
+                @POST("/users")
+                @Behaviors(FooBehavior(), BarBehavior())
+                func createUser() async throws
+            }
+
+            struct MyServiceAPI: MyService {
+                private let provider: Papyrus.Provider
+
+                init(provider: Papyrus.Provider) {
+                    self.provider = provider
+                }
+
+                func createUser() async throws {
+                    var req = builder(method: "POST", path: "/users")
+                    req.behaviors.insert(FooBehavior())
+                    req.behaviors.insert(BarBehavior())
+                    try await provider.request(&req).validate()
+                }
+
+                private func builder(method: String, path: String) -> Papyrus.RequestBuilder {
+                    provider.newBuilder(method: method, path: path)
+                }
+            }
+            """
+        }
+    }
+
+    func testBehaviorOnProtocol() {
+        assertMacro(["API": APIMacro.self]) {
+            """
+            @API
+            @Behaviors(FooBehavior())
+            protocol MyService {
+                @POST("/users")
+                func createUser() async throws
+            }
+            """
+        } expansion: {
+            """
+            @Behaviors(FooBehavior())
+            protocol MyService {
+                @POST("/users")
+                func createUser() async throws
+            }
+
+            struct MyServiceAPI: MyService {
+                private let provider: Papyrus.Provider
+
+                init(provider: Papyrus.Provider) {
+                    self.provider = provider
+                }
+
+                func createUser() async throws {
+                    var req = builder(method: "POST", path: "/users")
+                    try await provider.request(&req).validate()
+                }
+
+                private func builder(method: String, path: String) -> Papyrus.RequestBuilder {
+                    var req = provider.newBuilder(method: method, path: path)
+                    req.behaviors.insert(FooBehavior())
+                    return req
+                }
+            }
+            """
+        }
+    }
+
     func testSameAccess() {
         assertMacro(["API": APIMacro.self]) {
             """

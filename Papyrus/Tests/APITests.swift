@@ -71,13 +71,62 @@ final class APITests: XCTestCase {
     func testApiEndpointReturnsValidObjectForNonOptionalReturnType() async throws {
         // Arrange
         let sut = _PeopleAPI(provider: .init(baseURL: "", http: _HTTPServiceMock(responseType: .person)))
-        
+
         // Act
         let person = try await sut.get()
-        
+
         // Assert
         XCTAssertNotNil(person)
         XCTAssertEqual(person.name, "Petru")
+    }
+
+    func testBehaviorIsAttachedToAnnotatedRequest() async throws {
+        nonisolated(unsafe) var capturedBehaviors: PapyrusBehaviors?
+        let provider = Provider(baseURL: "", http: _HTTPServiceMock(responseType: .nil))
+            .intercept { req, next in
+                capturedBehaviors = req.behaviors
+                return try await next(req)
+            }
+        try? await _BehaviorsServiceAPI(provider: provider).withBehavior()
+        XCTAssertTrue(capturedBehaviors?.contains(_FooBehavior.self) == true)
+    }
+
+    func testBehaviorIsAbsentOnUnannotatedRequest() async throws {
+        nonisolated(unsafe) var capturedBehaviors: PapyrusBehaviors?
+        let provider = Provider(baseURL: "", http: _HTTPServiceMock(responseType: .nil))
+            .intercept { req, next in
+                capturedBehaviors = req.behaviors
+                return try await next(req)
+            }
+        try? await _BehaviorsServiceAPI(provider: provider).withoutBehavior()
+        XCTAssertFalse(capturedBehaviors?.contains(_FooBehavior.self) == true)
+    }
+
+    func testProtocolLevelBehaviorIsAttachedToAllRequests() async throws {
+        nonisolated(unsafe) var capturedBehaviors: PapyrusBehaviors?
+        let provider = Provider(baseURL: "", http: _HTTPServiceMock(responseType: .nil))
+            .intercept { req, next in
+                capturedBehaviors = req.behaviors
+                return try await next(req)
+            }
+        try? await _ProtocolBehaviorsServiceAPI(provider: provider).endpoint()
+        XCTAssertTrue(capturedBehaviors?.contains(_FooBehavior.self) == true)
+    }
+
+    func testBehaviorsArePassedBetweenInterceptors() async throws {
+        nonisolated(unsafe) var downstreamSawBehavior = false
+        let provider = Provider(baseURL: "", http: _HTTPServiceMock(responseType: .nil))
+            .intercept { req, next in
+                var req = req
+                req.behaviors.insert(_BarBehavior())
+                return try await next(req)
+            }
+            .intercept { req, next in
+                downstreamSawBehavior = req.behaviors.contains(_BarBehavior.self)
+                return try await next(req)
+            }
+        try? await _BehaviorsServiceAPI(provider: provider).withoutBehavior()
+        XCTAssertTrue(downstreamSawBehavior)
     }
 }
 
@@ -121,7 +170,7 @@ fileprivate final class _HTTPServiceMock: HTTPService {
     }
     
     func build(from builder: RequestBuilder) throws -> PapyrusRequest {
-        try _Request(url: builder.fullURL(), method: builder.method, headers: builder.headers)
+        try _Request(url: builder.fullURL(), method: builder.method, headers: builder.headers, behaviors: builder.behaviors)
     }
     
     func request(_ req: PapyrusRequest) async -> PapyrusResponse {
@@ -147,4 +196,24 @@ fileprivate struct _Response: PapyrusResponse {
     var headers: [String : String]?
     var statusCode: Int?
     var error: Error?
+}
+
+fileprivate struct _FooBehavior: PapyrusBehavior {}
+fileprivate struct _BarBehavior: PapyrusBehavior {}
+
+@API()
+fileprivate protocol _BehaviorsService {
+    @GET("/with")
+    @Behaviors(_FooBehavior())
+    func withBehavior() async throws
+
+    @GET("/without")
+    func withoutBehavior() async throws
+}
+
+@API()
+@Behaviors(_FooBehavior())
+fileprivate protocol _ProtocolBehaviorsService {
+    @GET("/endpoint")
+    func endpoint() async throws
 }
