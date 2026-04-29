@@ -205,7 +205,7 @@ fileprivate final class _HTTPServiceMock: HTTPService {
 fileprivate struct _Request: PapyrusRequest {
     var url: URL
     var method: String
-    var headers: [String : String]
+    var headers: PapyrusHeaders
     var body: Data?
     var behaviors: PapyrusBehaviors = PapyrusBehaviors()
 }
@@ -213,7 +213,7 @@ fileprivate struct _Request: PapyrusRequest {
 fileprivate struct _Response: PapyrusResponse {
     var request: PapyrusRequest?
     var body: Data?
-    var headers: [String : String]?
+    var headers: PapyrusHeaders?
     var statusCode: Int?
     var error: Error?
 }

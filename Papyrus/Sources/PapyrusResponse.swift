@@ -3,7 +3,7 @@ import Foundation
 public protocol PapyrusResponse: Sendable {
     var request: PapyrusRequest? { get }
     var body: Data? { get }
-    var headers: [String: String]? { get }
+    var headers: PapyrusHeaders? { get }
     var statusCode: Int? { get }
     var error: Error? { get }
 
@@ -68,7 +68,7 @@ public struct ErrorResponse: PapyrusResponse {
 
     public var request: PapyrusRequest? { nil }
     public var body: Data? { nil }
-    public var headers: [String: String]? { nil }
+    public var headers: PapyrusHeaders? { nil }
     public var statusCode: Int? { nil }
     public var error: Error? { _error }
 }

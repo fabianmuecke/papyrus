@@ -3,14 +3,14 @@ import Foundation
 public struct PapyrusURLRequest: PapyrusRequest {
     public var url: URL
     public var method: String
-    public var headers: [String: String]
+    public var headers: PapyrusHeaders
     public var body: Data?
     public var behaviors: PapyrusBehaviors
 
     public init(
         url: URL,
         method: String,
-        headers: [String: String],
+        headers: PapyrusHeaders,
         body: Data?,
         behaviors: PapyrusBehaviors = PapyrusBehaviors()
     ) {

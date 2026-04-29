@@ -79,7 +79,7 @@ public struct RequestBuilder {
     public var method: String
     public var path: String
     public var parameters: [String: String]
-    public var headers: [String: String]
+    public var headers: PapyrusHeaders
     public var queries: [ContentKey: ContentValue]
     public var body: Content?
     public var behaviors: PapyrusBehaviors
@@ -200,7 +200,7 @@ public struct RequestBuilder {
         return url
     }
 
-    public func bodyAndHeaders() throws -> (Data?, [String: String]) {
+    public func bodyAndHeaders() throws -> (Data?, PapyrusHeaders) {
         let body = try bodyData()
         var headers = headers
         headers["Content-Type"] = requestBodyEncoder.contentType

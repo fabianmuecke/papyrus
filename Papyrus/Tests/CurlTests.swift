@@ -189,7 +189,7 @@ final class CurlTests: XCTestCase {
 private struct TestResponse: PapyrusResponse {
     var request: PapyrusRequest? = nil
     var body: Data? = nil
-    var headers: [String : String]? = nil
+    var headers: PapyrusHeaders? = nil
     var statusCode: Int? = nil
     var error: Error? = nil
 }
@@ -197,11 +197,11 @@ private struct TestResponse: PapyrusResponse {
 private struct TestRequest: PapyrusRequest {
     var method: String
     var url: URL
-    var headers: [String : String]
+    var headers: PapyrusHeaders
     var body: Data?
     var behaviors: PapyrusBehaviors
 
-    init(method: String, url: URL, headers: [String : String], body: Data?) {
+    init(method: String, url: URL, headers: PapyrusHeaders, body: Data?) {
         self.method = method
         self.url = url
         self.headers = headers

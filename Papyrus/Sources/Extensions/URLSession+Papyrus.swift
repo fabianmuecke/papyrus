@@ -25,14 +25,14 @@ extension URLSession: HTTPService {
             method: builder.method,
             headers: headers,
             body: body,
-            behaviors: builder.behaviors
+            behaviors: builder.behaviors,
         )
     }
 
     public func request(_ req: PapyrusRequest) async -> PapyrusResponse {
         var urlRequest = URLRequest(url: req.url)
         urlRequest.httpMethod = req.method
-        urlRequest.allHTTPHeaderFields = req.headers
+        urlRequest.allHTTPHeaderFields = req.headers.reduce(into: [:]) { $0[$1.key] = $1.value }
         urlRequest.httpBody = req.body
 
         #if os(Linux) // Linux doesn't have access to async URLSession APIs
@@ -67,7 +67,7 @@ private struct _Response: PapyrusResponse {
     var request: PapyrusRequest?
     let error: Error?
     let body: Data?
-    let headers: [String: String]?
+    let headers: PapyrusHeaders?
     var statusCode: Int? { (urlResponse as? HTTPURLResponse)?.statusCode }
 
     init(papyrusRequest: PapyrusRequest, urlRequest: URLRequest, response: URLResponse?, error: Error?, body: Data?) {

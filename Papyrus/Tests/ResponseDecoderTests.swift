@@ -75,7 +75,7 @@ fileprivate struct _Person: Decodable {
 fileprivate struct _Response : PapyrusResponse {
     var request: PapyrusRequest?
     var body: Data?
-    var headers: [String : String]?
+    var headers: PapyrusHeaders?
     var statusCode: Int?
     var error: Error?
 }
