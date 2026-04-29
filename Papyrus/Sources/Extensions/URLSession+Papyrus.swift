@@ -7,8 +7,8 @@ extension Provider {
     public init(
         baseURL: String,
         urlSession: URLSession = .shared,
-        modifiers: [RequestModifier] = [],
-        interceptors: [Interceptor] = []
+        modifiers: [any RequestModifier] = [],
+        interceptors: [any Interceptor] = []
     ) {
         self.init(baseURL: baseURL, http: urlSession, modifiers: modifiers, interceptors: interceptors)
     }

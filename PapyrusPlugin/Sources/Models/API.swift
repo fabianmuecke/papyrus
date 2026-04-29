@@ -98,6 +98,23 @@ extension API.Endpoint {
     }
 }
 
+extension API {
+    var allBehaviorExpressions: [String] {
+        let fromProtocol = attributes.flatMap { attribute -> [String] in
+            guard case .behaviors(let values) = attribute else { return [] }
+            return values
+        }
+        let fromEndpoints = endpoints.flatMap { endpoint in
+            endpoint.attributes.flatMap { attribute -> [String] in
+                guard case .behaviors(let values) = attribute else { return [] }
+                return values
+            }
+        }
+        var seen = Set<String>()
+        return (fromProtocol + fromEndpoints).filter { seen.insert($0).inserted }
+    }
+}
+
 extension [EndpointParameter] {
     fileprivate func validated() throws -> [EndpointParameter] {
         let bodies = filter { $0.kind == .body }

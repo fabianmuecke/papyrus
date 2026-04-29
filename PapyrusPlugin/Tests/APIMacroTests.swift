@@ -439,7 +439,8 @@ final class APIMacroTests: XCTestCase {
             struct MyServiceAPI: MyService {
                 private let provider: Papyrus.Provider
 
-                init(provider: Papyrus.Provider) {
+                init(provider: Papyrus.Provider) throws {
+                    try provider.requireBehaviorHandler(for: FooBehavior())
                     self.provider = provider
                 }
 
@@ -478,7 +479,9 @@ final class APIMacroTests: XCTestCase {
             struct MyServiceAPI: MyService {
                 private let provider: Papyrus.Provider
 
-                init(provider: Papyrus.Provider) {
+                init(provider: Papyrus.Provider) throws {
+                    try provider.requireBehaviorHandler(for: FooBehavior())
+                    try provider.requireBehaviorHandler(for: BarBehavior())
                     self.provider = provider
                 }
 
@@ -518,7 +521,8 @@ final class APIMacroTests: XCTestCase {
             struct MyServiceAPI: MyService {
                 private let provider: Papyrus.Provider
 
-                init(provider: Papyrus.Provider) {
+                init(provider: Papyrus.Provider) throws {
+                    try provider.requireBehaviorHandler(for: FooBehavior())
                     self.provider = provider
                 }
 

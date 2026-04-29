@@ -1,5 +1,7 @@
 import Foundation
 
+extension Never: PapyrusBehavior {}
+
 public protocol PapyrusBehavior: Sendable {}
 
 public struct PapyrusBehaviors: Sendable {
@@ -15,11 +17,11 @@ public struct PapyrusBehaviors: Sendable {
         storage[ObjectIdentifier(type)] as? B
     }
 
-    public func contains<B: PapyrusBehavior>(_ type: B.Type) -> Bool {
+    public func contains(_ type: (some PapyrusBehavior).Type) -> Bool {
         storage[ObjectIdentifier(type)] != nil
     }
 
-    public mutating func remove<B: PapyrusBehavior>(_ type: B.Type) {
+    public mutating func remove(_ type: (some PapyrusBehavior).Type) {
         storage.removeValue(forKey: ObjectIdentifier(type))
     }
 }

@@ -4,10 +4,10 @@ import Foundation
 public struct Provider: Sendable {
     public let baseURL: String
     public let http: HTTPService
-    public var interceptors: [Interceptor]
-    public var modifiers: [RequestModifier]
+    public var interceptors: [any Interceptor]
+    public var modifiers: [any RequestModifier]
 
-    public init(baseURL: String, http: HTTPService, modifiers: [RequestModifier] = [], interceptors: [Interceptor] = []) {
+    public init(baseURL: String, http: HTTPService, modifiers: [any RequestModifier] = [], interceptors: [any Interceptor] = []) {
         self.baseURL = baseURL
         self.http = http
         self.interceptors = interceptors
@@ -48,6 +48,19 @@ public struct Provider: Sendable {
         return result
     }
 
+    public func requireBehaviorHandler(for behavior: any PapyrusBehavior) throws {
+        try _checkBehaviorHandler(behavior)
+    }
+
+    private func _checkBehaviorHandler<B: PapyrusBehavior>(_ behavior: B) throws {
+        let required = ObjectIdentifier(B.self)
+        let hasHandler = interceptors.contains { _interceptorBehaviorID($0) == required }
+                      || modifiers.contains   { _modifierBehaviorID($0) == required }
+        guard hasHandler else {
+            throw PapyrusError("Provider missing behavior handler for \(B.self).")
+        }
+    }
+
     @discardableResult
     public func request(_ builder: inout RequestBuilder) async throws -> PapyrusResponse {
         let request = try createRequest(&builder)
@@ -69,11 +82,21 @@ public struct Provider: Sendable {
     }
 }
 
-public protocol Interceptor: Sendable {
+private func _interceptorBehaviorID<I: Interceptor>(_ i: I) -> ObjectIdentifier {
+    ObjectIdentifier(I.Behavior.self)
+}
+
+private func _modifierBehaviorID<M: RequestModifier>(_ m: M) -> ObjectIdentifier {
+    ObjectIdentifier(M.Behavior.self)
+}
+
+public protocol Interceptor<Behavior>: Sendable {
+    associatedtype Behavior: PapyrusBehavior = Never
     typealias Next = (PapyrusRequest) async throws -> PapyrusResponse
     func intercept(req: PapyrusRequest, next: Next) async throws -> PapyrusResponse
 }
 
-public protocol RequestModifier: Sendable {
+public protocol RequestModifier<Behavior>: Sendable {
+    associatedtype Behavior: PapyrusBehavior = Never
     func modify(req: inout RequestBuilder) throws
 }

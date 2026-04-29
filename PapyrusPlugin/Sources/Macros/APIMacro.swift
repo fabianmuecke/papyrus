@@ -23,7 +23,11 @@ extension API {
 
             "private let provider: Papyrus.Provider"
 
-            Declaration("init(provider: Papyrus.Provider)") {
+            let allBehaviors = allBehaviorExpressions
+            Declaration("init(provider: Papyrus.Provider)\(allBehaviors.isEmpty ? "" : " throws")") {
+                for behavior in allBehaviors {
+                    "try provider.requireBehaviorHandler(for: \(behavior))"
+                }
                 "self.provider = provider"
             }
             .access(access)
